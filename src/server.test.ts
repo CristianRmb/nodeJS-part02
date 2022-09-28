@@ -237,3 +237,64 @@ describe("DELETE /planet/:id", () => {
     expect(response.text).toContain("Cannot DELETE /planets/asdf");
   });
 });
+
+describe("POST /planets/:id/photo", () => {
+  test("Valid request with PNG file upload", async () => {
+    await request
+      .post("/planets/23/photo")
+      .attach("photo", "test-fixtures/photos/file.png")
+      .expect(201)
+      .expect("Access-Control-Allow-Origin", "http://localhost:8080");
+  });
+
+  test("Valid request with JPG file upload", async () => {
+    await request
+      .post("/planets/23/photo")
+      .attach("photo", "test-fixtures/photos/file.jpg")
+      .expect(201)
+      .expect("Access-Control-Allow-Origin", "http://localhost:8080");
+  });
+
+  test("Invalid request with text file upload", async () => {
+    const response = await request
+      .post("/planets/23/photo")
+      .attach("photo", "test-fixtures/photos/file.txt")
+      .expect(500)
+      .expect("Content-Type", /text\/html/);
+
+    expect(response.text).toContain(
+      "Error: The ulpoaded file must be a JPG or a PNG image."
+    );
+  });
+
+  test("Invalid planet ID", async () => {
+    const response = await request
+      .post("/planets/asdf/photo")
+      .expect(404)
+      .expect("Content-Type", /text\/html/);
+
+    expect(response.text).toContain("Cannot POST /planets/asdf/photo");
+  });
+
+  test("Valid request with no file upload", async () => {
+    const response = await request
+      .post("/planets/23/photo")
+      .expect(400)
+      .expect("Content-Type", /text\/html/);
+
+    expect(response.text).toContain("No photo file upoloaded");
+  });
+
+  test("Planet does not exist", async () => {
+    //@ts-ignore
+    prismaMock.planet.update.mockRejectedValue(new Error("Error"));
+
+    const response = await request
+      .post("/planets/23/photo")
+      .attach("photo", "test-fixtures/photos/file.png")
+      .expect(404)
+      .expect("Content-Type", /text\/html/);
+
+    expect(response.text).toContain("Cannot POST /planets/23/photo");
+  });
+});
