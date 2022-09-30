@@ -33,7 +33,8 @@ describe("GET /planets", () => {
       .get("/planets")
       .expect(200)
       .expect("Content-Type", /application\/json/)
-      .expect("Access-Control-Allow-Origin", "http://localhost:8080");
+      .expect("Access-Control-Allow-Origin", "http://localhost:8080")
+      .expect("Access-Control-Allow-Credentials", "true");
 
     expect(response.body).toEqual(planets);
   });
@@ -42,20 +43,33 @@ describe("GET /planets", () => {
 describe("POST /planets", () => {
   test("Valid request", async () => {
     const planet = {
+      id: 3,
       name: "Mercury",
+      description: null,
       diameter: 1234,
       moons: 12,
+      createdAt: "2022-09-23T14:21:30.558Z",
+      updateAt: "2022-09-23T14:21:30.568Z",
     };
+
+    // @ts-ignore
+    prismaMock.planet.create.mockResolvedValue(planet);
 
     const response = await request
       .post("/planets")
-      .send(planet)
+      .send({
+        name: "Mercury",
+        diameter: 1234,
+        moons: 12,
+      })
       .expect(201)
       .expect("Content-Type", /application\/json/)
-      .expect("Access-Control-Allow-Origin", "http://localhost:8080");
+      .expect("Access-Control-Allow-Origin", "http://localhost:8080")
+      .expect("Access-Control-Allow-Credentials", "true");
 
     expect(response.body).toEqual(planet);
   });
+
   test("Invalid request", async () => {
     const planet = {
       diamenter: 1234,
@@ -146,7 +160,8 @@ describe("PUT /planets/:id", () => {
       })
       .expect(200)
       .expect("Content-Type", /application\/json/)
-      .expect("Access-Control-Allow-Origin", "http://localhost:8080");
+      .expect("Access-Control-Allow-Origin", "http://localhost:8080")
+      .expect("Access-Control-Allow-Credentials", "true");
 
     expect(response.body).toEqual(planet);
   });
@@ -211,7 +226,8 @@ describe("DELETE /planet/:id", () => {
     const response = await request
       .delete("/planets/1")
       .expect(204)
-      .expect("Access-Control-Allow-Origin", "http://localhost:8080");
+      .expect("Access-Control-Allow-Origin", "http://localhost:8080")
+      .expect("Access-Control-Allow-Credentials", "true");
 
     expect(response.text).toEqual("");
   });
@@ -244,7 +260,8 @@ describe("POST /planets/:id/photo", () => {
       .post("/planets/23/photo")
       .attach("photo", "test-fixtures/photos/file.png")
       .expect(201)
-      .expect("Access-Control-Allow-Origin", "http://localhost:8080");
+      .expect("Access-Control-Allow-Origin", "http://localhost:8080")
+      .expect("Access-Control-Allow-Credentials", "true");
   });
 
   test("Valid request with JPG file upload", async () => {
@@ -252,7 +269,8 @@ describe("POST /planets/:id/photo", () => {
       .post("/planets/23/photo")
       .attach("photo", "test-fixtures/photos/file.jpg")
       .expect(201)
-      .expect("Access-Control-Allow-Origin", "http://localhost:8080");
+      .expect("Access-Control-Allow-Origin", "http://localhost:8080")
+      .expect("Access-Control-Allow-Credentials", "true");
   });
 
   test("Invalid request with text file upload", async () => {

@@ -5,6 +5,8 @@ import {
   planetSchema,
   PlanetData,
 } from "../lib/middleware/validation";
+
+import { checkAuthorization } from "../lib/middleware/passport";
 import { initMulterMiddleware } from "../lib/middleware/multer";
 
 const upload = initMulterMiddleware();
@@ -39,13 +41,15 @@ router.get("/:id(\\d+)", async (request, response, next) => {
 //POST => per inserire un pianeta nella lista
 router.post(
   "/",
+  checkAuthorization,
   validate({ body: planetSchema }),
   async (request, response) => {
     const planetData: PlanetData = request.body;
+    const username = request.user?.username as string;
 
     const planet = await prisma.planet.create({
       //@ts-ignore
-      data: planetData,
+      data: { ...planetData, createdBy: username, updatedBy: username },
     });
 
     response.status(201).json(planet);
@@ -55,16 +59,18 @@ router.post(
 //PUT => per modificare un pianeta aggiungendo dati
 router.put(
   "/:id(\\d+)",
+  checkAuthorization,
   validate({ body: planetSchema }),
   async (request, response, next) => {
     const planetID = Number(request.params.id);
     const planetData: PlanetData = request.body;
+    const username = request.user?.username as string;
     //try catch per gestire l'errore "Planet does not exist"
     try {
       const planet = await prisma.planet.update({
-        //@ts-ignore
         where: { id: Number(request.params.id) },
-        data: planetData,
+        //@ts-ignore
+        data: { ...planetData, createdBy: username, updatedBy: username },
       });
       response.status(200).json(planet);
     } catch (error) {
@@ -74,25 +80,30 @@ router.put(
   }
 );
 
-router.delete("/:id(\\d+)", async (request, response, next) => {
-  const planetID = Number(request.params.id);
-  //try catch piu semplice perche stiamo semplicemente cancellando dei dati
-  try {
-    await prisma.planet.delete({
-      where: { id: Number(request.params.id) },
-    });
+router.delete(
+  "/:id(\\d+)",
+  checkAuthorization,
+  async (request, response, next) => {
+    const planetID = Number(request.params.id);
+    //try catch piu semplice perche stiamo semplicemente cancellando dei dati
+    try {
+      await prisma.planet.delete({
+        where: { id: Number(request.params.id) },
+      });
 
-    response.status(204).end();
-    //.end() indica la fine della risposta dal server
-  } catch (error) {
-    response.status(404);
-    next(`Cannot DELETE /planets/${planetID}`);
+      response.status(204).end();
+      //.end() indica la fine della risposta dal server
+    } catch (error) {
+      response.status(404);
+      next(`Cannot DELETE /planets/${planetID}`);
+    }
   }
-});
+);
 
 //per gestire file si usa npm multer (middleware)
 router.post(
   "/:id(\\d+)/photo",
+  checkAuthorization,
   upload.single("photo"),
   async (request, response, next) => {
     if (!request.file) {
